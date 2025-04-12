@@ -7,53 +7,75 @@ import math
 
 class Trader:
     def __init__(self):
-        # Initialize price history for each product
-        self.price_history = {}  # Changed to snake_case
-        self.history_length = 100  # Changed to snake_case
+        self.price_history = {}
+        # Track history length per product
+        self.product_history_lengths = {
+            "RAINFOREST_RESIN": 100,
+            "KELP": 100,
+            "SQUID_INK": 100,
+            "DEFAULT": 100
+        }
         
-    def update_price_history(self, product, buy_orders, sell_orders):  # Changed to snake_case
+    def update_price_history(self, product, buy_orders, sell_orders):
         if buy_orders and sell_orders:
-            new_bids = {}  # Changed to snake_case
-            new_sells = {}  # Changed to snake_case
+            # Get history length for this product
+            history_length = self.product_history_lengths.get(
+                product, 
+                self.product_history_lengths["DEFAULT"]
+            )
+            
+            # Update deque if needed
+            if product in self.price_history:
+                # Create new deque if length changed
+                if self.price_history[product].maxlen != history_length:
+                    self.price_history[product] = deque(
+                        self.price_history[product], 
+                        maxlen=history_length
+                    )
+            else:
+                # Initialize new deque with correct length
+                self.price_history[product] = deque(maxlen=history_length)
+
+            # Rest of your existing update logic...
+            new_bids = {}
+            new_sells = {}
 
             for bid in buy_orders.keys():
                 if buy_orders[bid] >= 10:
-                    new_bids[bid] = buy_orders[bid]  # Changed from .add() to dict assignment
+                    new_bids[bid] = buy_orders[bid]
             
-            for ask in sell_orders.keys():  # Changed variable name from 'sell' to 'ask'
+            for ask in sell_orders.keys():
                 if sell_orders[ask] >= 10:
-                    new_sells[ask] = sell_orders[ask]  # Changed from .add() to dict assignment
+                    new_sells[ask] = sell_orders[ask]
 
-            if new_bids and new_sells:  # Only calculate if we have qualifying orders
-                mid_bids = statistics.median(new_bids.keys())  # Changed to snake_case
-                mid_asks = statistics.median(new_sells.keys())  # Changed to snake_case
+            if new_bids and new_sells:
+                mid_bids = statistics.median(new_bids.keys())
+                mid_asks = statistics.median(new_sells.keys())
                 mid_price = (mid_bids + mid_asks) / 2
-                
-                if product not in self.price_history:
-                    self.price_history[product] = deque(maxlen=self.history_length)
                 
                 self.price_history[product].append(mid_price)
                 return mid_price
         return None
 
-    def get_fair_price(self, product):  # Changed to snake_case
-        if product == "RAINFOREST_RESIN":
-            self.history_length = 1000
-            if product in self.price_history and len(self.price_history[product]) > 900:
-                return statistics.median(self.price_history[product])
-            return 10000
-        elif product == "KELP":
-            self.history_length = 200
-            if product in self.price_history and len(self.price_history[product]) > 0:
-                return statistics.median(self.price_history[product])
-            return 10000  # Default if no history
-        elif product == "SQUID_INK":
-            self.history_length = 50
-            if product in self.price_history and len(self.price_history[product]) > 0:
-                return statistics.median(self.price_history[product])
-            return 10000  # Default if no history
+    def get_fair_price(self, product):
+        # Get history length for this product
+        history_length = self.product_history_lengths.get(
+            product, 
+            self.product_history_lengths["DEFAULT"]
+        )
+        
+        # Update if needed (this is just for safety)
+        if product in self.price_history and self.price_history[product].maxlen != history_length:
+            self.price_history[product] = deque(
+                self.price_history[product], 
+                maxlen=history_length
+            )
+            
+        if product in self.price_history and len(self.price_history[product]) > 0:
+            return statistics.median(self.price_history[product])
         else:
-            return 10
+            # Return product-specific default if needed
+            return 10  # Or add default prices to product_history_lengths
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
         print("traderData: " + state.traderData)
