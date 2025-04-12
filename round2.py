@@ -1,73 +1,104 @@
 from datamodel import OrderDepth, TradingState, Order
-from typing import List, Dict
+from typing import List, Dict, Deque
+from collections import deque
+import statistics
 import json
 import math
 
-
-def getFairResin(buyOrders,sellOrders):
-    return 10000
-
-def getFairPrice(buyOrders,sellOrders,product):
-    if product == "RAINFOREST_RESIN":
-        return getFairResin(buyOrders,sellOrders)
-    else:
-        return 10
-
 class Trader:
+    def __init__(self):
+        # Initialize price history for each product
+        self.price_history = {}  # Changed to snake_case
+        self.history_length = 100  # Changed to snake_case
+        
+    def update_price_history(self, product, buy_orders, sell_orders):  # Changed to snake_case
+        if buy_orders and sell_orders:
+            new_bids = {}  # Changed to snake_case
+            new_sells = {}  # Changed to snake_case
 
-    def getFairPrice(buyOrders,sellOrders,product):
+            for bid in buy_orders.keys():
+                if buy_orders[bid] >= 10:
+                    new_bids[bid] = buy_orders[bid]  # Changed from .add() to dict assignment
+            
+            for ask in sell_orders.keys():  # Changed variable name from 'sell' to 'ask'
+                if sell_orders[ask] >= 10:
+                    new_sells[ask] = sell_orders[ask]  # Changed from .add() to dict assignment
+
+            if new_bids and new_sells:  # Only calculate if we have qualifying orders
+                mid_bids = statistics.median(new_bids.keys())  # Changed to snake_case
+                mid_asks = statistics.median(new_sells.keys())  # Changed to snake_case
+                mid_price = (mid_bids + mid_asks) / 2
+                
+                if product not in self.price_history:
+                    self.price_history[product] = deque(maxlen=self.history_length)
+                
+                self.price_history[product].append(mid_price)
+                return mid_price
+        return None
+
+    def get_fair_price(self, product):  # Changed to snake_case
         if product == "RAINFOREST_RESIN":
-            return getFairResin(buyOrders,sellOrders)
+            self.history_length = 1000
+            if product in self.price_history and len(self.price_history[product]) > 900:
+                return statistics.median(self.price_history[product])
+            return 10000
+        elif product == "KELP":
+            self.history_length = 200
+            if product in self.price_history and len(self.price_history[product]) > 0:
+                return statistics.median(self.price_history[product])
+            return 10000  # Default if no history
+        elif product == "SQUID_INK":
+            self.history_length = 50
+            if product in self.price_history and len(self.price_history[product]) > 0:
+                return statistics.median(self.price_history[product])
+            return 10000  # Default if no history
         else:
             return 10
 
     def run(self, state: TradingState) -> Dict[str, List[Order]]:
-        #Initiation
         print("traderData: " + state.traderData)
         print("Observations: " + str(state.observations))
         result = {}
 
-        #Check Each Product
-        for product in state.order_depths.keys():
+        # Corrected to use order_depths instead of orderDepths
+        for product in state.order_depths.keys():  
             order_depth: OrderDepth = state.order_depths[product]
             orders: List[Order] = []
 
-            buyOrders = order_depth.buy_orders.keys()
-            sellOrders = order_depth.sell_orders.keys()
+            # Update price history with current market data
+            current_mid = self.update_price_history(
+                product, 
+                order_depth.buy_orders,  # Corrected to snake_case
+                order_depth.sell_orders  # Corrected to snake_case
+            )
 
-            #Calculate Acceptable Price
-            fairPrice = getFairPrice(buyOrders,sellOrders,product)
+            # Calculate fair price based on history
+            fair_price = self.get_fair_price(product)
 
-            # Checking Sell Orders
-            if len(order_depth.sell_orders) > 0:
+            # Buy logic
+            if order_depth.sell_orders:  # Corrected to snake_case
+                best_ask = min(order_depth.sell_orders.keys())
+                best_ask_volume = order_depth.sell_orders[best_ask]
+                
+                if best_ask <= fair_price:
+                    print(f"BUY {product} {-best_ask_volume}x {best_ask}")
+                    orders.append(Order(product, best_ask, -best_ask_volume))
 
-                # Sort all the available sell orders by their price,
-                # and select only the sell order with the lowest price
-                lowestSell = min(sellOrders)
-                lowestSellVolume = order_depth.sell_orders[lowestSell]
+            # Sell logic
+            if order_depth.buy_orders:  # Corrected to snake_case
+                best_bid = max(order_depth.buy_orders.keys())
+                best_bid_volume = order_depth.buy_orders[best_bid]
+                
+                if best_bid >= fair_price:
+                    print(f"SELL {product} {best_bid_volume}x {best_bid}")
+                    orders.append(Order(product, best_bid, -best_bid_volume))
 
-                # Check that lowestSell is lower than the fairPrice
-                if lowestSell <= fairPrice:
-
-                    # In case the lowest ask is lower than our fair value,
-                    # This presents an opportunity for us to buy cheaply
-                    print("BUY", str(-lowestSellVolume) + "x", lowestSell)
-                    orders.append(Order(product, lowestSell, -lowestSellVolume))
-
-            # Check Bid Orders and buy up cheap bids
-            if len(order_depth.buy_orders) != 0:
-                highestBid = max(order_depth.buy_orders.keys())
-                highestBidVolume = order_depth.buy_orders[highestBid]
-
-                # Check that 
-                if highestBid > fairPrice:
-                    print("SELL", str(highestBidVolume) + "x", highestBid)
-                    orders.append(Order(product, highestBid, -highestBidVolume))
-
-            # Add all the above the orders to the result dict
             result[product] = orders
             
-        traderData = "SAMPLE" # String value holding Trader state data required. It will be delivered as TradingState.traderData on next execution.
-    
+        # Serialize trader data for next iteration
+        trader_data = json.dumps({  # Changed to snake_case
+            "price_history": {k: list(v) for k, v in self.price_history.items()}
+        })
+        
         conversions = 1 
-        return result, conversions, traderData
+        return result, conversions, trader_data
