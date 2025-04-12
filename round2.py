@@ -5,13 +5,11 @@ import math
 
 
 def getFairResin(buyOrders,sellOrders):
-    return 100000
+    return 10000
 
 def getFairPrice(buyOrders,sellOrders,product):
     if product == "RAINFOREST_RESIN":
         return getFairResin(buyOrders,sellOrders)
-    elif product == "SQUID_INK":
-        return getFairResin()
     else:
         return 10
 
