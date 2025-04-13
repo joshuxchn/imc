@@ -102,3 +102,35 @@ class Trader:
         
         conversions = 1 
         return result, conversions, trader_data
+    
+    #logic for basket trading
+
+    # def find_midprice(state, product):
+    #     order_depth = state.order_depths[product]
+    #     best_bid = max(order_depth.buy_orders.keys())
+    #     best_ask = min(order_depth.sell_orders.keys())
+    #     mid_price = (best_ask + best_bid) // 2
+    #     return mid_price
+        
+
+    # def baskset_two_arbitrage_trading(self, state):
+        
+    #     croissant_mid_price = self.find_midprice(state, "CROISSANT")
+    #     jams_mid_price = self.find_midprice(state, "JAMS")
+    #     #real price of the basket
+    #     basket_mid_price = self.find_midprice(state, "PICNIC_BASKET2")
+    #     #combined value from indivual stocks
+    #     calculated_value = (4 * croissant_mid_price) + (2 * jams_mid_price)
+
+    #     if (basket_mid_price > calculated_value):
+    #         #sell
+
+    #     elif (basket_mid_price < calculated_value):
+
+    #         # buy
+            
+            
+
+
+            
+    #     return 0
