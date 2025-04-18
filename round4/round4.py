@@ -2,7 +2,7 @@ import json
 import statistics
 from collections import deque
 from typing import Dict, List
-from datamodel import OrderDepth, TradingState, Order, ConversionObservation
+from datamodel import OrderDepth, TradingState, Order
 
 class Trader:
     def __init__(self):
@@ -228,54 +228,6 @@ class Trader:
         if {"PICNIC_BASKET2", "CROISSANTS", "JAMS"}.issubset(state.order_depths.keys()):
             orders.extend(self.arbitrage_basket2(state))
         return orders
-    
-    def tariff_trading(self, observation: ConversionObservation, state: TradingState) -> List[Order]:
-        """
-        Trades MAGNIFICENT_MACARONS based on import/export tariffs:
-          predicted_price = 545.34 − 32.16·importTariff + 22.09·exportTariff
-        If predicted_price > mid_price ⇒ buy, if < mid_price ⇒ sell.
-        """
-        orders: List[Order] = []
-
-        # 1) Compute the model’s “fair” predicted price
-        predicted_price = (
-            545.34
-            - 32.16 * observation.importTariff
-            + 22.09 * observation.exportTariff
-        )
-
-        # 2) Get current market mid price for macarons
-        macarons_mid = self.find_midprice(state, "MAGNIFICENT_MACARONS")
-
-        # 3) Generate a signal: positive ⇒ buy, negative ⇒ sell
-        signal = predicted_price - macarons_mid
-        threshold = 15
-
-        # 4) Pull the macarons order book
-        od = state.order_depths.get("MAGNIFICENT_MACARONS")
-        if od is None:
-            return orders
-
-        # 5) If signal > 0 ⇒ buy at the best ask
-        if signal > threshold and od.sell_orders:
-            best_ask = min(od.sell_orders.keys())
-            ask_vol = abs(od.sell_orders[best_ask])
-            orders.append(
-                Order("MAGNIFICENT_MACARONS", best_ask, ask_vol)
-            )
-
-        # 6) If signal < 0 ⇒ sell at the best bid
-        elif signal < threshold and od.buy_orders:
-            best_bid = max(od.buy_orders.keys())
-            bid_vol = od.buy_orders[best_bid]
-            orders.append(
-                Order("MAGNIFICENT_MACARONS", best_bid, -bid_vol)
-            )
-
-        # 7) If signal == 0 ⇒ no trade
-
-        return orders
-
 
     def regular_trading(self, state: TradingState, product: str) -> List[Order]:
         """
@@ -322,19 +274,10 @@ class Trader:
                 result[prod] = []
             result[prod].append(order)
 
-        obs_map = state.observations.conversionObservations
-        macaron_obs = obs_map.get("MAGNIFICENT_MACARONS")
-        
-        # 2) If we have that observation, call the method
-        if macaron_obs is not None:
-            macaron_orders = self.tariff_trading(macaron_obs, state)
-            for order in macaron_orders:
-                result.setdefault(order.symbol, []).append(order)
-
         # Process remaining (non-basket) products.
-        not_regular_products = {"PICNIC_BASKET1", "PICNIC_BASKET2", "MAGNIFICENT_MACARONS"}
+        basket_products = {"PICNIC_BASKET1", "PICNIC_BASKET2"}
         for product in state.order_depths.keys():
-            if product in not_regular_products:
+            if product in basket_products:
                 continue
             orders = self.regular_trading(state, product)
             if orders:
