@@ -49,12 +49,14 @@ class Trader:
         elif product == "KELP":
             self.history_length = 50
             if product in self.price_history and len(self.price_history[product]) > 0:
-                return statistics.median(self.price_history[product])
+                if len(self.price_history[product]) > 200:
+                    return statistics.median(self.price_history[product][-200:])
             return 10000
         elif product == "SQUID_INK":
             self.history_length = 25000
             if product in self.price_history and len(self.price_history[product]) > 0:
-                return statistics.median(self.price_history[product])
+                if len(self.price_history[product]) > 200:
+                    return statistics.median(self.price_history[product][-200:]) / 2 + statistics.median(self.price_history[product][-100:]) / 2
             return 10000
         else:
             return 10
