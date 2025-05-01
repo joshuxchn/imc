@@ -31,6 +31,8 @@ After research, we converged on a popular trading hypothesis called arbitrage. I
 Next, we went back to round 1 products: rainforest resin, squid ink, and kelp. Both products were very similar in volatility, and we didn't notice or anticipate any sharp changes in price trends. As such, we implemented a moving average, taking the mid-price within a certain time frame. We also tweaked the time frame for each product (kelp around 100 ticks, squid ink 50 ticks).
 
 At the end of the round, we made 36k seashells from algo trading.
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/feca60c2-987d-44d9-aaa6-430fdefd63ab" />
+
 
 ## Round 3
 
@@ -43,6 +45,11 @@ In addition, with our moving average strategy, our kelp results from the previou
 Lastly, we implemented a simple fair price strategy with Volcanic rock, buying and selling over a certain price. This was a last minute hail mary as we approached the deadline, and we got very lucky.
 
 With these edits, we made over 275k seashells from algorithmic trading, placing us in the "elite contenders" category at #119 for algorithm trading.
+
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/92f038e5-d335-42dc-a31c-7e73125fee56" />
+
+<img width="700" alt="image" src="https://github.com/user-attachments/assets/9ceadf27-e20e-4c40-8b47-29176810d676" />
+
 
 ## Reflection
 
